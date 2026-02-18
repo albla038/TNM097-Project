@@ -41,6 +41,4 @@ def segment(
     lab_cluster_centers = kmeans.cluster_centers_
     segmented_data = lab_cluster_centers[labels]
 
-    # segmented_img = segmented_data.reshape(rows, cols, ch)
-
     return (segmented_data, labels, lab_cluster_centers)

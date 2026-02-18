@@ -2,14 +2,15 @@ import skimage as ski
 from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 from segment import segment
+from morphology import clean_segments
 
 
-def process_img(rgb_img: NDArray, bilateral_filtering=False):
+def process_img(rgb_img: NDArray, num_of_colors=5, bilateral_filtering=False):
 
-    # Bilateral filtering?
-
+    # Bilateral filtering
     if bilateral_filtering:
         rgb_img = ski.restoration.denoise_bilateral(rgb_img, channel_axis=-1)
+        print("Bilateral filtering done.")
 
     # TODO: downsample (with smart resulting dimensions)
 
@@ -17,10 +18,18 @@ def process_img(rgb_img: NDArray, bilateral_filtering=False):
     lab_img: NDArray = ski.color.rgb2lab(rgb_img)
 
     # Segment image based on K colors
-    (segmented_lab_img, labels, lab_cluster_centers) = segment(lab_img, 5)
+    (segmented_lab_img, labels, lab_cluster_centers) = segment(
+        lab_img, num_of_colors=num_of_colors
+    )
+    print("K-Means segmentation done.")
+
+    # Apply morphological operations to clean up image
+    cleaned_labels = clean_segments(labels, min_radius=3)
+    # TODO: Notify if one segment is "lost" to the morphology
+    print("Label cleaning done.")
 
     # Convert back to RGB
-    segmented_img = ski.color.lab2rgb(segmented_lab_img)
+    segmented_img = ski.color.lab2rgb(lab_cluster_centers[cleaned_labels])
 
     # TODO: Apply morphological operations to clean up image
 
