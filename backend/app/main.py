@@ -2,7 +2,7 @@ import skimage as ski
 from numpy.typing import NDArray
 import numpy as np
 from matplotlib import pyplot as plt
-from segment import segment
+from segmentation import segment_img_by_colors
 from morphology import clean_segments
 from paint_map import generate_paint_map
 
@@ -20,7 +20,7 @@ def process_img(rgb_img: NDArray, num_of_colors=5, bilateral_filtering=False):
     lab_img: NDArray = ski.color.rgb2lab(rgb_img)
 
     # Segment image based on K colors
-    (segmented_lab_img, labels, lab_cluster_centers) = segment(
+    (segmented_lab_img, labels, lab_cluster_centers) = segment_img_by_colors(
         lab_img, num_of_colors=num_of_colors
     )
     print("K-Means segmentation done.")

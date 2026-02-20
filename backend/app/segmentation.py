@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from sklearn.cluster import KMeans
 
 
-def segment(
+def segment_img_by_colors(
     lab_img: NDArray, num_of_colors=10, max_kmeans_iter=300
 ) -> tuple[NDArray, NDArray, NDArray]:
     """
