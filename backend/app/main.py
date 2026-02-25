@@ -5,16 +5,25 @@ from matplotlib import pyplot as plt
 from segmentation import segment_img_by_colors
 from morphology import clean_segments
 from paint_map import generate_paint_map
+from utils import calculateScaleFactor, showImagePair
 
 
-def process_img(rgb_img: NDArray, num_of_colors=5, bilateral_filtering=False):
+def process_img(
+    rgb_img: NDArray, num_of_colors=7, rescale=True, bilateral_filtering=False
+):
 
     # Bilateral filtering
     if bilateral_filtering:
-        rgb_img = ski.restoration.denoise_bilateral(rgb_img, channel_axis=-1)
+        rgb_img: NDArray = ski.restoration.denoise_bilateral(rgb_img, channel_axis=-1)
         print("Bilateral filtering done.")
 
-    # TODO: downsample (with smart resulting dimensions)
+    if rescale:
+        # Rescale (with smart resulting dimensions)
+        (rows, cols, ch) = rgb_img.shape
+        factor = calculateScaleFactor(width=cols, height=rows, base_size=800)
+        rgb_img: NDArray = ski.transform.rescale(
+            image=rgb_img, scale=factor, anti_aliasing=(factor < 1), channel_axis=2
+        )
 
     # Convert to CIELAB
     lab_img: NDArray = ski.color.rgb2lab(rgb_img)
@@ -32,7 +41,6 @@ def process_img(rgb_img: NDArray, num_of_colors=5, bilateral_filtering=False):
 
     # Convert back to RGB
     segmented_img = ski.color.lab2rgb(lab_cluster_centers[cleaned_labels])
-
 
     # TODO: Match KMeans clusters against user defined colors
 
