@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 
 
-def calculateScaleFactor(width: int, height: int, base_size=800):
+def calculate_scale_factor(width: int, height: int, base_size=800):
     """
     Calculate the scale factor to resize the image to an A-standard (A3, A4 print sizes etc.) size while maintaining the aspect ratio.
     """
@@ -24,7 +24,7 @@ def calculateScaleFactor(width: int, height: int, base_size=800):
     return min(scale_x, scale_y)
 
 
-def showImagePair(img1: NDArray, img2: NDArray):
+def show_image_pair(img1: NDArray, img2: NDArray):
     plt.figure()
     plt.subplot(121)
     plt.imshow(img1)
@@ -32,3 +32,9 @@ def showImagePair(img1: NDArray, img2: NDArray):
     plt.subplot(122)
     plt.imshow(img2)
     plt.show()
+
+
+def mm_to_pixels(mm: float, ppi=300):
+    inches = mm / 25.4
+    pixels = inches * ppi
+    return round(pixels)

@@ -3,7 +3,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def clean_segments(labels: NDArray, min_radius=3) -> NDArray:
+def clean_segments(labels: NDArray, min_px_width=4) -> NDArray:
     """
     Cleans up the segmented image by applying morphological operations to remove unusable pixel segments.
 
@@ -33,7 +33,9 @@ def clean_segments(labels: NDArray, min_radius=3) -> NDArray:
         segment = labels == s
 
         # Perform morphological opening to remove unusable segments
-        cleaned_segment = ski.morphology.isotropic_opening(segment, radius=min_radius)
+        cleaned_segment = ski.morphology.isotropic_opening(
+            segment, radius=(min_px_width / 2)
+        )
 
         # Add cleaned segment to the cleaned labels map
         cleaned_labels_map[cleaned_segment] = s
