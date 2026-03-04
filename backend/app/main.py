@@ -8,6 +8,7 @@ from paint_map import generate_paint_map
 from utils import calculate_scale_factor, show_image_pair, mm_to_pixels
 from typing import Literal
 from constants import A_FORMAT
+from pdf import generate_pdf_buffer
 
 
 def process_img(
@@ -66,6 +67,9 @@ def process_img(
     (boundaries, paint_map) = generate_paint_map(
         labels=scaled_labels, line_gray_level=128
     )
+
+    pdf_buffer = generate_pdf_buffer(img_data=paint_map, page_size=format["page_size"])
+
     return segmented_img
 
 
