@@ -1,22 +1,23 @@
 import numpy as np
 import skimage as ski
+from numpy.typing import NDArray
 
 
-def generate_paint_map(labels):
-    # Create a black background
-    black_bg = np.zeros(labels.shape)
-
-    # Mark gray 1px boundaries between segments
-    paint_map = ski.segmentation.mark_boundaries(
-        image=black_bg,
-        label_img=labels,
-        color=(0.1, 0.1, 0.1),
-        mode="subpixel",
+def generate_paint_map(labels: NDArray, line_gray_level=128):
+    boundaries = ski.segmentation.find_boundaries(
+        label_img=labels, connectivity=1, mode="inner", background=-1
     )
 
-    paint_map_rgb = ski.util.img_as_ubyte(paint_map)
+    # Initialize RGBA image with correct img dims (rows x cols x 4)
+    paint_map = np.zeros((*labels.shape, 4), dtype=np.uint8)
+    # Initialize map with transparent pixels
+    paint_map[:] = [255, 255, 255, 0]
 
-    # Set the black background to white (255)
-    paint_map_rgb[paint_map_rgb == 0] = 255
+    paint_map[boundaries] = [
+        line_gray_level,
+        line_gray_level,
+        line_gray_level,
+        255,
+    ]
 
-    return paint_map_rgb
+    return (boundaries, paint_map)
