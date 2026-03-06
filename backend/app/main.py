@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from segmentation import segment_img_by_colors
 from morphology import clean_segments
-from paint_map import generate_paint_map
+from contour_map import generate_contour_map
 from utils import calculate_scale_factor, show_image_pair, mm_to_pixels
 from typing import Literal
 from constants import A_FORMAT
@@ -72,14 +72,16 @@ def process_img(
     segmented_img_cluster_colors = ski.color.lab2rgb(lab_cluster_centers[scaled_labels])
     segmented_img_user_colors = ski.color.lab2rgb(ordered_lab_colors[scaled_labels])
 
-    (boundaries, paint_map) = generate_paint_map(
-        labels=scaled_labels, line_gray_level=128
+    (contours, contour_map) = generate_contour_map(
+        labels=scaled_labels, line_gray_level=128, target_ppi=target_ppi
     )
     print("Paint map generation done.")
 
     # TODO: Find region center positions with label
 
-    pdf_buffer = generate_pdf_buffer(img_data=paint_map, page_size=format["page_size"])
+    pdf_buffer = generate_pdf_buffer(
+        img_data=contour_map, page_size=format["page_size"]
+    )
 
     return segmented_img_cluster_colors, segmented_img_user_colors
 
