@@ -9,16 +9,20 @@ from utils import calculate_scale_factor, show_image_pair, mm_to_pixels
 from typing import Literal
 from constants import A_FORMAT
 from pdf import generate_pdf_buffer
+from color_matching import map_colors_to_clusters
 
 
 def process_img(
     rgb_img: NDArray,
-    num_of_colors=7,
+    rgb_colors: NDArray,
     format_str: Literal["a3", "a4", "a5"] = "a4",
     min_mm_width=2,
     target_ppi=300,
     bilateral_filtering=False,
 ):
+    # Convert user defined colors to CIELAB in [K x 3] shape
+    lab_colors = ski.color.rgb2lab(rgb_colors.reshape(1, -1, 3)).reshape(-1, 3)
+
     format = A_FORMAT[format_str]
 
     # Bilateral filtering
@@ -31,7 +35,7 @@ def process_img(
     # A4 is 210 x 297 mm = 8.27 x 11.69 inches
     # Base size 827 is therefore the width of an portrait A4 at 100 PPI
     ppi = 100
-    factor = calculate_scale_factor(width=cols, height=rows, base_size=827)
+    factor = calculate_scale_factor(width=cols, height=rows, base_size=(8.27 * ppi))
     rgb_img: NDArray = ski.transform.rescale(
         image=rgb_img, scale=factor, anti_aliasing=(factor < 1), channel_axis=2
     )
@@ -41,7 +45,7 @@ def process_img(
 
     # Segment image based on K colors
     (segmented_lab_img, labels, lab_cluster_centers) = segment_img_by_colors(
-        lab_img, num_of_colors=num_of_colors
+        lab_img, num_of_colors=len(lab_colors)
     )
     print("K-Means segmentation done.")
 
@@ -59,18 +63,25 @@ def process_img(
         order=0,
     ).astype(np.uint8)
 
-    # Convert back to RGB
-    segmented_img = ski.color.lab2rgb(lab_cluster_centers[scaled_labels])
+    # Match K-Means clusters against user defined colors
+    ordered_lab_colors = map_colors_to_clusters(
+        user_colors=lab_colors, cluster_colors=lab_cluster_centers
+    )
 
-    # TODO: Match KMeans clusters against user defined colors
+    # Convert back to RGB
+    segmented_img_cluster_colors = ski.color.lab2rgb(lab_cluster_centers[scaled_labels])
+    segmented_img_user_colors = ski.color.lab2rgb(ordered_lab_colors[scaled_labels])
 
     (boundaries, paint_map) = generate_paint_map(
         labels=scaled_labels, line_gray_level=128
     )
+    print("Paint map generation done.")
+
+    # TODO: Find region center positions with label
 
     pdf_buffer = generate_pdf_buffer(img_data=paint_map, page_size=format["page_size"])
 
-    return segmented_img
+    return segmented_img_cluster_colors, segmented_img_user_colors
 
 
 # Load image
