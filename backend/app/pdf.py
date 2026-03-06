@@ -9,25 +9,26 @@ import matplotlib.pyplot as plt
 
 def generate_pdf_buffer(
     img_data: NDArray,
-    page_size: tuple[float, float] = A3,
+    page_size: tuple[float, float] = A4,
 ) -> io.BytesIO:
     """
     Generates a PDF buffer containing the given image data.
     """
-
-    # Get page size in pt
-    (page_width, page_height) = page_size
 
     # Read img data with PIL
     pil_img = Image.fromarray(img_data)
     # Get image dimensions in px to determine print orientation
     (img_width, img_height) = pil_img.size
 
-    # Rotate image by 90 degrees if it is wider than it is taller
-    # This makes sure the image is always printed correctly vertical/"standing"
+    # Get page size in pt
+    (page_width, page_height) = page_size
+
+    # Change page orientation to landscape if image is wider than it is taller
+    # This makes sure the image is always printed as large as possible
     if img_width > img_height:
-        pil_img = pil_img.rotate(90, expand=True)
-        (img_width, img_height) = pil_img.size
+        # Swap page width and height
+        page_size = (page_height, page_width)
+        (page_width, page_height) = page_size
 
     # Create image buffer
     img_buffer = io.BytesIO()
