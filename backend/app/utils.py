@@ -65,3 +65,8 @@ def create_coordinate_scales(
         return y_offset + (print_height - scale * py)
 
     return (scale_x, scale_y)
+
+
+def hex_to_RGB(hex: str) -> list[int]:
+    hex = hex.lstrip("#")
+    return list(int(hex[i : i + 2], 16) for i in (0, 2, 4))

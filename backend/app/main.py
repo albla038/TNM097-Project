@@ -14,12 +14,16 @@ from color_matching import map_colors_to_clusters
 
 def process_img(
     rgb_img: NDArray,
-    rgb_colors: NDArray,
+    rgb_colors: list[str] | NDArray,
     format_str: Literal["a3", "a4", "a5"] = "a4",
     min_mm_width=2,
     target_ppi=300,
     bilateral_filtering=False,
 ):
+    if type(rgb_colors) == list:
+        rgb_colors = np.array([hex_to_RGB(c) for c in rgb_colors], dtype=np.uint8)
+        print("Converted hex colors to RGB:", rgb_colors)
+
     # Convert user defined colors to CIELAB in [K x 3] shape
     lab_colors = ski.color.rgb2lab(rgb_colors.reshape(1, -1, 3)).reshape(-1, 3)
 
