@@ -1,6 +1,9 @@
 import numpy as np
 import skimage as ski
 from numpy.typing import NDArray
+from utils import mm_to_pixels
+from definitions import RegionDetail
+from scipy.ndimage import distance_transform_edt
 
 
 def generate_contour_map(labels: NDArray, line_gray_level=128, target_ppi=300):
@@ -21,3 +24,53 @@ def generate_contour_map(labels: NDArray, line_gray_level=128, target_ppi=300):
     ]
 
     return (contours, contour_map)
+
+
+def find_region_centers(labels: NDArray):
+    # Shift all labels one step (K-Means returns zero-indexed labels)
+    labels = labels + 1
+
+    region_details: list[RegionDetail] = []
+
+    # Loop over unique segments
+    for s in np.unique(labels):
+        # Isolate segment from label image
+        segment = labels == s
+
+        # Find connected components
+        region_labels = ski.measure.label(segment)
+
+        # Loop over each region in segment
+        for region in ski.measure.regionprops(region_labels):
+
+            padded_region = np.pad(
+                region.image, pad_width=1, mode="constant", constant_values=False
+            )
+
+            # Find distance from each pixel in region to nearest edge pixel (distance transform)
+            dist_map = distance_transform_edt(padded_region)
+
+            # Find coords of pixel with max distance to edge
+            (local_y, local_x) = np.unravel_index(np.argmax(dist_map), dist_map.shape)
+
+            # Account for padding
+            local_x -= 1
+            local_y -= 1
+
+            (min_y, min_x, _, _) = region.bbox
+            global_x = min_x + local_x
+            global_y = min_y + local_y
+
+            # Find max size that can fit in region (for label size)
+            max_size_px = np.floor(2 * np.max(dist_map))
+
+            region_details.append(
+                {
+                    "label": s,
+                    "row": int(np.rint(global_y)),
+                    "col": int(np.rint(global_x)),
+                    "max_size_px": int(max_size_px),
+                }
+            )
+
+    return region_details

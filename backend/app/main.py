@@ -4,8 +4,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from segmentation import segment_img_by_colors
 from morphology import clean_segments
-from contour_map import generate_contour_map
-from utils import calculate_scale_factor, show_image_pair, mm_to_pixels
+from contour_map import generate_contour_map, find_region_centers
+from utils import calculate_scale_factor, mm_to_pixels, hex_to_RGB
 from typing import Literal
 from constants import A_FORMAT
 from pdf import generate_pdf_buffer
@@ -54,7 +54,10 @@ def process_img(
         labels,
         min_px_width=(mm_to_pixels(min_mm_width, ppi) // format["scale_factor"]),
     )
-    # TODO: Notify if one segment is "lost" to the morphology
+    if np.unique(labels).size != np.unique(cleaned_labels).size:
+        print(
+            "Warning: Number of segments after cleaning is different from before cleaning. Consider adjusting the min_mm_width parameter."
+        )
     print("Label cleaning done.")
 
     scaled_labels: NDArray = ski.transform.rescale(
@@ -77,10 +80,14 @@ def process_img(
     )
     print("Paint map generation done.")
 
-    # TODO: Find region center positions with label
+    # Find region center positions with label
+    region_details = find_region_centers(scaled_labels)
 
+    # Generate PDF
     pdf_buffer = generate_pdf_buffer(
-        img_data=contour_map, page_size=format["page_size"]
+        img_data=contour_map,
+        region_details=region_details,
+        page_size=format["page_size"],
     )
 
     return segmented_img_cluster_colors, segmented_img_user_colors
