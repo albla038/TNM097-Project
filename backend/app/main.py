@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from segmentation import segment_img_by_colors
 from morphology import clean_segments
 from contour_map import generate_contour_map, find_region_centers
-from utils import calculate_scale_factor, mm_to_pixels, hex_to_RGB
+from utils import mm_to_pixels, hex_to_RGB
 from typing import Literal
 from constants import A_FORMAT
 from pdf import generate_pdf_buffer
@@ -22,7 +22,6 @@ def process_img(
 ):
     if type(rgb_colors) == list:
         rgb_colors = np.array([hex_to_RGB(c) for c in rgb_colors], dtype=np.uint8)
-        print("Converted hex colors to RGB:", rgb_colors)
 
     # Convert user defined colors to CIELAB in [K x 3] shape
     lab_colors = ski.color.rgb2lab(rgb_colors.reshape(1, -1, 3)).reshape(-1, 3)
@@ -34,29 +33,22 @@ def process_img(
         rgb_img: NDArray = ski.restoration.denoise_bilateral(rgb_img, channel_axis=-1)
         print("Bilateral filtering done.")
 
-    # Rescale image to make K-Means computation more efficient
-    (rows, cols, ch) = rgb_img.shape
-    # A4 is 210 x 297 mm = 8.27 x 11.69 inches
-    # Base size 827 is therefore the width of an portrait A4 at 100 PPI
-    ppi = 100
-    factor = calculate_scale_factor(width=cols, height=rows, base_size=(8.27 * ppi))
-    rgb_img: NDArray = ski.transform.rescale(
-        image=rgb_img, scale=factor, anti_aliasing=(factor < 1), channel_axis=2
-    )
-
     # Convert to CIELAB
     lab_img: NDArray = ski.color.rgb2lab(rgb_img)
 
     # Segment image based on K colors
-    (segmented_lab_img, labels, lab_cluster_centers) = segment_img_by_colors(
-        lab_img, num_of_colors=len(lab_colors)
+    (labels, lab_cluster_centers) = segment_img_by_colors(
+        lab_img=lab_img,
+        num_of_colors=len(lab_colors),
+        kmeans_ppi=100,
+        target_ppi=target_ppi,
     )
     print("K-Means segmentation done.")
 
     # Apply morphological operations to clean up image
     cleaned_labels = clean_segments(
         labels,
-        min_px_width=(mm_to_pixels(min_mm_width, ppi) // format["scale_factor"]),
+        min_px_width=(mm_to_pixels(min_mm_width, target_ppi) // format["scale_factor"]),
     )
     if np.unique(labels).size != np.unique(cleaned_labels).size:
         print(
@@ -64,28 +56,24 @@ def process_img(
         )
     print("Label cleaning done.")
 
-    scaled_labels: NDArray = ski.transform.rescale(
-        image=cleaned_labels,
-        scale=format["scale_factor"] * (target_ppi / ppi),
-        order=0,
-    ).astype(np.uint8)
-
     # Match K-Means clusters against user defined colors
     ordered_lab_colors = map_colors_to_clusters(
         user_colors=lab_colors, cluster_colors=lab_cluster_centers
     )
 
     # Convert back to RGB
-    segmented_img_cluster_colors = ski.color.lab2rgb(lab_cluster_centers[scaled_labels])
-    segmented_img_user_colors = ski.color.lab2rgb(ordered_lab_colors[scaled_labels])
+    segmented_img_cluster_colors = ski.color.lab2rgb(
+        lab_cluster_centers[cleaned_labels]
+    )
+    segmented_img_user_colors = ski.color.lab2rgb(ordered_lab_colors[cleaned_labels])
 
     (contours, contour_map) = generate_contour_map(
-        labels=scaled_labels, line_gray_level=128, target_ppi=target_ppi
+        labels=cleaned_labels, line_gray_level=128, target_ppi=target_ppi
     )
-    print("Paint map generation done.")
+    print("Contour map generation done.")
 
     # Find region center positions with label
-    region_details = find_region_centers(scaled_labels)
+    region_details = find_region_centers(cleaned_labels)
 
     # Generate PDF
     pdf_buffer = generate_pdf_buffer(
@@ -93,6 +81,11 @@ def process_img(
         region_details=region_details,
         page_size=format["page_size"],
     )
+    print("PDF generation done.")
+
+    # Write buffer to PDF file
+    with open("out/lines_0_1_mm.pdf", "wb") as file:
+        file.write(pdf_buffer.getbuffer())
 
     return segmented_img_cluster_colors, segmented_img_user_colors
 
