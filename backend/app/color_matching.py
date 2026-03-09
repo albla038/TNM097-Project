@@ -5,7 +5,9 @@ import skimage as ski
 import numpy as np
 
 
-def map_colors_to_clusters(user_colors: NDArray, cluster_colors: NDArray) -> NDArray:
+def map_colors_to_clusters(
+    user_colors: NDArray, cluster_colors: NDArray
+) -> tuple[NDArray, dict[int, int]]:
     """
     Order user defined colors according to cluster colors from K-Means segmentation.
     Expects CIELab colors in [K x 3] format
@@ -26,4 +28,7 @@ def map_colors_to_clusters(user_colors: NDArray, cluster_colors: NDArray) -> NDA
     # Rearrange colors in labeling order according to match
     ordered_user_colors[col_ind] = user_colors[row_ind]
 
-    return ordered_user_colors
+    # Create lookup array for mapping cluster colors to user defined colors
+    lookup_table = dict(zip(col_ind, row_ind))
+
+    return ordered_user_colors, lookup_table

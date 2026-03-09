@@ -31,7 +31,7 @@ def generate_contour_map(labels: NDArray, line_gray_level=128, target_ppi=300):
     return (contours, contour_map)
 
 
-def find_region_centers(labels: NDArray):
+def find_region_centers(labels: NDArray, color_lookup_table: dict[int, int]):
     # Shift all labels one step (K-Means returns zero-indexed labels)
     labels = labels + 1
 
@@ -71,7 +71,7 @@ def find_region_centers(labels: NDArray):
 
             region_details.append(
                 {
-                    "label": s,
+                    "label": color_lookup_table[s - 1] + 1,
                     "row": int(np.rint(global_y)),
                     "col": int(np.rint(global_x)),
                     "max_size_px": int(max_size_px),

@@ -57,7 +57,7 @@ def process_img(
     print("Label cleaning done.")
 
     # Match K-Means clusters against user defined colors
-    ordered_lab_colors = map_colors_to_clusters(
+    (ordered_lab_colors, color_lookup_table) = map_colors_to_clusters(
         user_colors=lab_colors, cluster_colors=lab_cluster_centers
     )
 
@@ -73,7 +73,9 @@ def process_img(
     print("Contour map generation done.")
 
     # Find region center positions with label
-    region_details = find_region_centers(cleaned_labels)
+    region_details = find_region_centers(
+        labels=cleaned_labels, color_lookup_table=color_lookup_table
+    )
 
     # Generate PDF
     pdf_buffer = generate_pdf_buffer(
