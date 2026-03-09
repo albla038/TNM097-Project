@@ -11,6 +11,11 @@ def generate_contour_map(labels: NDArray, line_gray_level=128, target_ppi=300):
         label_img=labels, connectivity=1, mode="inner", background=-1
     )
 
+    line_thickness = mm_to_pixels(0.1, target_ppi)
+
+    # Thicken up lines to 0.1 mm
+    contours = ski.morphology.isotropic_dilation(contours, line_thickness / 2)
+
     # Initialize RGBA image with correct img dims (rows x cols x 4)
     contour_map = np.zeros((*labels.shape, 4), dtype=np.uint8)
     # Initialize map with transparent pixels
