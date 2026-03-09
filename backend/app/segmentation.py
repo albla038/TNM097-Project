@@ -31,7 +31,7 @@ def segment_img_by_colors(
     img_data = lab_img.reshape(-1, 3)
 
     # Fit K-Means clusters
-    kmeans = KMeans(n_clusters=num_of_colors, max_iter=max_kmeans_iter)
+    kmeans = KMeans(n_clusters=num_of_colors, max_iter=max_kmeans_iter, random_state=1)
     kmeans.fit(img_data)
 
     # Reshape labels to 3D matrix
