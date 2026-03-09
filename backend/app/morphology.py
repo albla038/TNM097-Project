@@ -9,12 +9,9 @@ def clean_segments(labels: NDArray, min_px_width=4) -> NDArray:
 
     Args:
         labels: 2D matrix of cluster labels for each pixel (rows x cols)
-
-        min_radius: Minimum radius for morphological opening. This parameter controls the size of the structuring element used in the opening operation.
-
+        min_px_width: Minimum width in pixels for a segment to be considered valid. Segments smaller than this will be removed.
     Returns:
-        final_labels: 2D matrix of cleaned cluster labels for each pixel (rows x cols). The labels are zero-indexed and may have fewer unique values than the input labels due to the removal of small segments.
-
+        2D matrix of cleaned cluster labels for each pixel (rows x cols). The labels are zero-indexed and may have fewer unique values than the input labels due to the removal of small segments.
     """
 
     # Shift all labels one step (K-Means returns zero-indexed labels)
