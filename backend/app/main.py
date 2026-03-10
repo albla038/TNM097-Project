@@ -16,7 +16,7 @@ def process_img(
     rgb_img: NDArray,
     rgb_colors: list[str] | NDArray,
     format_str: Literal["a3", "a4", "a5"] = "a4",
-    min_mm_width=2,
+    min_mm_width: float = 2,
     target_ppi=300,
     bilateral_filtering=False,
 ):
@@ -30,7 +30,10 @@ def process_img(
 
     # Bilateral filtering
     if bilateral_filtering:
-        rgb_img: NDArray = ski.restoration.denoise_bilateral(rgb_img, channel_axis=-1)
+        rgb_img: NDArray = ski.restoration.denoise_bilateral(
+            rgb_img,
+            channel_axis=-1,
+        )
         print("Bilateral filtering done.")
 
     # Convert to CIELAB

@@ -16,7 +16,7 @@ def map_colors_to_clusters(
     # Match each user color against a cluster color and, for each pair,
     # calculate the "distance" in color according to custom metric
     distance_matrix = pairwise_distances(
-        X=user_colors, Y=cluster_colors, metric=ski.color.deltaE_ciede2000, kL=0.5
+        X=user_colors, Y=cluster_colors, metric=ski.color.deltaE_ciede2000
     )
 
     # Find the optimal color pairs
