@@ -6,13 +6,46 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState } from "react";
+import { useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SettingsForm from "@/components/settings-form";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useDebounce } from "use-debounce";
+import { randomHexColor } from "@/lib/utils";
+import { settingsFormSchema, type SettingsFormReturn } from "@/lib/schemas";
 
-export function App() {
-  const [filename, setFilename] = useState("ttest");
+export default function App() {
+  const settingsForm = useForm<SettingsFormReturn>({
+    resolver: zodResolver(settingsFormSchema),
+    defaultValues: {
+      filename: "",
+      rgbColors: [
+        { value: randomHexColor() },
+        { value: randomHexColor() },
+        { value: randomHexColor() },
+        { value: randomHexColor() },
+        { value: randomHexColor() },
+        { value: randomHexColor() },
+      ],
+      format: "a4",
+      minWidth: 1.5,
+      targetPpi: 300,
+      bilateralFiltering: true,
+    },
+  });
+
+  // Watch and debounce all form values
+  const watchedFormValues = useWatch({
+    control: settingsForm.control,
+  }) as SettingsFormReturn;
+  const [debouncedFormValues] = useDebounce(watchedFormValues, 300);
+
+  // React to the debounced changes
+  useEffect(() => {
+    console.log(debouncedFormValues);
+  }, [debouncedFormValues]);
 
   return (
     <div className="flex h-svh flex-col gap-4 p-6">
@@ -29,10 +62,15 @@ export function App() {
           <ScrollArea className="h-[75svh]">
             <CardContent className="pt-4">
               {/* Image upload */}
-              <ImageUploadDropZone />
+              <ImageUploadDropZone
+                onSetFilename={(filename) =>
+                  settingsForm.setValue("filename", filename)
+                }
+              />
+
               <Separator className="my-4" />
 
-              <SettingsForm filename={filename} onSetFilename={setFilename} />
+              <SettingsForm form={settingsForm} />
             </CardContent>
           </ScrollArea>
         </Card>
@@ -40,5 +78,3 @@ export function App() {
     </div>
   );
 }
-
-export default App;

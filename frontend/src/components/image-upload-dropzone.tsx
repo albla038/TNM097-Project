@@ -1,6 +1,5 @@
 import { ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   FileUpload,
@@ -11,17 +10,51 @@ import {
   FileUploadItemPreview,
   FileUploadList,
   FileUploadTrigger,
+  type FileUploadProps,
 } from "@/components/ui/file-upload";
 import { useCallback, useState } from "react";
+import { uploadImage } from "@/lib/api";
 
-export function ImageUploadDropZone() {
+type ImageUploadDropZoneProps = {
+  onSetFilename: (filename: string) => void;
+};
+
+export function ImageUploadDropZone({
+  onSetFilename,
+}: ImageUploadDropZoneProps) {
   const [files, setFiles] = useState<File[]>([]);
 
-  const onFileReject = useCallback((file: File, message: string) => {
+  const handleFileReject = useCallback((file: File, message: string) => {
     toast.error(message, {
       description: `"${file.name}" was rejected`,
     });
   }, []);
+
+  const handleUpload: NonNullable<FileUploadProps["onUpload"]> = useCallback(
+    async (files, { onSuccess, onError }) => {
+      try {
+        const data = await uploadImage(files[0]);
+        onSetFilename(data.filename);
+        onSuccess(files[0]);
+      } catch (error) {
+        onError(
+          files[0],
+          error instanceof Error ? error : new Error("Upload failed")
+        );
+      }
+    },
+    [onSetFilename]
+  );
+
+  const handleValueChange = useCallback(
+    (newFiles: File[]) => {
+      setFiles(newFiles);
+      if (newFiles.length === 0) {
+        onSetFilename("");
+      }
+    },
+    [onSetFilename]
+  );
 
   return (
     <FileUpload
@@ -30,8 +63,9 @@ export function ImageUploadDropZone() {
       maxSize={8 * 1024 * 1024}
       className="w-full max-w-md"
       value={files}
-      onValueChange={setFiles}
-      onFileReject={onFileReject}
+      onValueChange={handleValueChange}
+      onFileReject={handleFileReject}
+      onUpload={handleUpload}
       multiple={false}
     >
       <FileUploadDropzone className="border-primary/20 bg-primary/5 hover:bg-primary/10 data-dragging:bg-primary/10">

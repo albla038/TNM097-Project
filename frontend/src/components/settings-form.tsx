@@ -24,67 +24,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { FORMAT_VALUES, type SettingsFormReturn } from "@/lib/schemas";
+import { randomHexColor } from "@/lib/utils";
 import { RotateCw, X } from "lucide-react";
-import { useEffect } from "react";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { useDebounce } from "use-debounce";
-import z from "zod";
+import { Controller, useFieldArray, type UseFormReturn } from "react-hook-form";
 
-const FORMAT_VALUES = ["a3", "a4", "a5"] as const;
 const FORMAT_OPTIONS = [
   { value: FORMAT_VALUES[0], label: "A3 (297 x 420 mm)" },
   { value: FORMAT_VALUES[1], label: "A4 (210 x 297 mm)" },
   { value: FORMAT_VALUES[2], label: "A5 (148 x 210 mm)" },
 ] as const;
 
-const randomHexColor = () =>
-  "#" +
-  Math.floor(Math.random() * 16777215)
-    .toString(16)
-    .padStart(6, "0");
-
-const formSchema = z.object({
-  filename: z.string().min(1, "Filename is required"),
-  rgbColors: z
-    .array(z.object({ value: z.string() }))
-    .min(2, "At least two colors must be selected"),
-  format: z.enum(FORMAT_VALUES),
-  minWidth: z.number().min(0, "Minimum width must be a positive number"),
-  targetPpi: z.number().min(1, "Target PPI must be a positive number"),
-  bilateralFiltering: z.boolean(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 type SettingsFormProps = {
-  filename: string;
-  onSetFilename: (filename: string) => void;
+  form: UseFormReturn<SettingsFormReturn>;
 };
 
-export default function SettingsForm({
-  filename,
-  onSetFilename,
-}: SettingsFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      filename: filename,
-      rgbColors: [
-        { value: randomHexColor() },
-        { value: randomHexColor() },
-        { value: randomHexColor() },
-        { value: randomHexColor() },
-        { value: randomHexColor() },
-        { value: randomHexColor() },
-      ],
-      format: "a4",
-      minWidth: 1.5,
-      targetPpi: 300,
-      bilateralFiltering: true,
-    },
-  });
-
+export default function SettingsForm({ form }: SettingsFormProps) {
   const {
     fields: colorFields,
     append,
@@ -93,15 +48,6 @@ export default function SettingsForm({
     control: form.control,
     name: "rgbColors",
   });
-
-  // Watch and debounce all form values
-  const watchedFormValues = useWatch({ control: form.control }) as FormValues;
-  const [debouncedFormValues] = useDebounce(watchedFormValues, 300);
-
-  // React to the debounced changes
-  useEffect(() => {
-    console.log(debouncedFormValues);
-  }, [debouncedFormValues]);
 
   return (
     <FieldSet>
